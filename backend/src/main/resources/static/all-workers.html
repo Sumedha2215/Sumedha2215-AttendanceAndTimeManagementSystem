@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Workers</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .back-btn {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 6px;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    .back-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+
+    a {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<header>All Workers</header>
+
+<div class="container">
+  <a href="manager-profile.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Profile</a>
+
+  <table id="workersTable">
+    <thead>
+      <tr>
+        <th>S.No.</th>
+        <th>Worker ID</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Shift</th>
+        <th>Attendance</th>
+      </tr>
+    </thead>
+    <tbody id="workersTableBody">
+      <tr><td colspan="6">Loading workers...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    fetch("http://localhost:8080/api/workers/with-attendance")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+        return response.json();
+      })
+      .then(workers => {
+        const tbody = document.getElementById("workersTableBody");
+        tbody.innerHTML = "";
+
+        if (!Array.isArray(workers) || workers.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='6'>No workers found.</td></tr>";
+          return;
+        }
+
+        workers.forEach((worker, index) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${worker.idNumber}</td>
+            <td><a href="worker-details.html?email=${encodeURIComponent(worker.email)}">${worker.name}</a></td>
+            <td>${worker.workerType || "-"}</td>
+            <td>${worker.shift || "-"}</td>
+            <td>${worker.attendance || "0/0"}</td>
+          `;
+
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error("Error loading workers with attendance:", error);
+        const tbody = document.getElementById("workersTableBody");
+        tbody.innerHTML = "<tr><td colspan='6'>Failed to load workers.</td></tr>";
+      });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manager Profile</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-size: 250px;
+    }
+
+    header {
+      background-color: #222;
+      color: #ffc107;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 35px;
+      position: relative;
+      font-size: 1.6rem;
+      border-bottom: 5px solid #ffc107;
+    }
+
+    .title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .hamburger {
+      font-size: 22px;
+      cursor: pointer;
+      color: #ffc107;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transform-origin: top right;
+      transform: scaleY(0);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+    }
+
+    .dropdown.show {
+      transform: scaleY(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .dropdown button {
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      font-size: 17px;
+      white-space: nowrap;
+    }
+
+    .dropdown button:hover {
+      background-color: #f4f4f4;
+    }
+
+    .profile-image {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ffc107;
+      background: white;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 6% auto;
+      padding: 25px;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 10px;
+      position: relative;
+      animation: slideDown 0.3s ease;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-content label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .modal-content input[type="file"] {
+      margin-top: 5px;
+    }
+
+    .close {
+      position: absolute;
+      right: 10px;
+      top: 5px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #444;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #ffc107;
+      color: black;
+      font-weight: bold;
+    }
+
+    .btn:hover {
+      background-color: #e0a800;
+    }
+
+    .profile-info p {
+      margin: 8px 0;
+      font-size: 1.1rem;
+    }
+
+    .workers-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.95rem;
+    }
+
+    .workers-table th,
+    .workers-table td {
+      padding: 10px 14px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+
+    .workers-table th {
+      background-color: #ffc107;
+      color: #222;
+      font-weight: bold;
+    }
+
+    .modal-workers {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    /* New Dashboard Section */
+    .dashboard-section {
+      padding: 40px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dashboard-box {
+      background-color: #fff8dc;
+      border-left: 6px solid #ffc107;
+      border-radius: 12px;
+      padding: 30px;
+      width: 100%;
+      max-width: 800px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .dashboard-box h2 {
+      margin-bottom: 10px;
+      color: #444;
+    }
+
+    .dashboard-box p {
+      font-size: 1.2rem;
+      color: #666;
+    }
+
+    .dashboard-box img {
+      margin-top: 25px;
+      width: 80px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="title">Manager Profile</div>
+  <div class="navbar-right">
+    <img src="images/default-avatar.png" class="profile-image" id="profileImage" alt="Profile">
+    <i class="fas fa-bars hamburger" id="hamburger"></i>
+  </div>
+
+  <div class="dropdown" id="dropdownMenu">
+    <button id="profileBtn">Profile</button>
+    <button id="viewWorkersBtn">View Workers</button>
+    <button id="markAttendanceBtn">Mark Attendance</button>
+    <button id="helpBtn">Help</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<!-- 👷 Construction-themed Dashboard Section -->
+<div class="dashboard-section">
+  <div class="dashboard-box">
+    <h2>👷 Welcome to Construction Manager Dashboard</h2>
+    <p>
+      Use the menu <strong>☰</strong> to manage workers, mark attendance, or get support.<br />
+      Stay organized and productive on site.
+    </p>
+    <!-- <img src="https://img.icons8.com/ios-filled/100/000000/worker-male.png" alt="Construction Icon" /> -->
+
+
+
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal" id="profileModal">
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h3>Manager Details</h3>
+    <div class="profile-info">
+      <p><strong>Name:</strong> <span id="managerName">Manager 1</span></p>
+      <p><strong>Email:</strong> <span id="managerEmail">manager1@example.com</span></p>
+      <p><strong>Shift:</strong> <span id="managerShift">Morning</span></p>
+    </div>
+
+    <label>Upload Profile Image:</label>
+    <input type="file" id="imageInput" accept="image/*">
+    <button class="btn" id="removeImageBtn">Remove Image</button>
+  </div>
+</div>
+
+<!-- Workers Modal -->
+<div class="modal" id="workersModal">
+  <div class="modal-content modal-workers">
+    <span class="close" id="closeWorkersModal">&times;</span>
+    <h3>All Workers</h3>
+    <table class="workers-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Mobile</th>
+          <th>Role</th>
+          <th>Shift</th>
+          <th>Joining Date</th>
+        </tr>
+      </thead>
+      <tbody id="workersTableBody">
+        <!-- Rows inserted dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="jss/manager-profile.js"></script>
+</body>
+</html>

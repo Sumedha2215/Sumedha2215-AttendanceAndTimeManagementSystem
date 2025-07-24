@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Worker Dashboard</title>
+  <style>
+    body { font-family: Arial; background-color: #eef; text-align: center; }
+    .container { margin-top: 100px; }
+    h1 { color: #333; }
+    button { padding: 10px 20px; margin: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome, Worker</h1>
+    <p>Check Your Attendance and Wages</p>
+    <button onclick="window.location.href='my-attendance.html'">My Attendance</button>
+    <button onclick="window.location.href='my-wages.html'">My Wages</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <script>
+    function logout() {
+      window.location.href = "/index.html";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!-- ✅ FINAL CODE: mark-attendance.html with shift and worker type filtering + worker details link -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mark Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 35px;
+      font-size: 1.6rem;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .profile-image {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+      background: white;
+    }
+
+    .hamburger {
+      font-size: 22px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background-color: white;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transform: scaleY(0);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    .dropdown.show {
+      transform: scaleY(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .dropdown button {
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .dropdown button:hover {
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      padding: 30px;
+    }
+
+    .filter-section {
+      margin-bottom: 20px;
+    }
+
+    .filter-section select,
+    .filter-section input[type="date"] {
+      margin-right: 10px;
+      padding: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .btn-red {
+      background-color: #e74c3c;
+    }
+
+    .btn-green {
+      background-color: #2ecc71;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    a {
+      color: #3498db;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="title">Mark Attendance</div>
+  <div class="navbar-right">
+    <img src="images/default-avatar.png" class="profile-image" id="profileImage" />
+    <i class="fas fa-bars hamburger" id="hamburger"></i>
+  </div>
+
+  <div class="dropdown" id="dropdownMenu">
+    <button id="profileBtn">Profile</button>
+    <button id="viewWorkersBtn">View Workers</button>
+    <button id="helpBtn">Help</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="filter-section">
+    <label for="filterDate"><strong>Select Date:</strong></label>
+    <input type="date" id="filterDate" />
+
+    <label for="filterShift"><strong>Shift:</strong></label>
+    <select id="filterShift">
+      <option value="">All</option>
+      <option value="morning">Morning</option>
+      <option value="night">Night</option>
+    </select>
+
+    <label for="filterType"><strong>Worker Type:</strong></label>
+    <select id="filterType">
+      <option value="">All</option>
+      <option value="Carpenter">Carpenter</option>
+      <option value="Labour">Labour</option>
+      <option value="Painter">Painter</option>
+      <option value="Plumber">Plumber</option>
+      <option value="Electrician">Electrician</option>
+    </select>
+  </div>
+
+  <table id="attendanceTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Mark</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceBody">
+      <tr><td colspan="4">Loading workers...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const dropdown = document.getElementById("dropdownMenu");
+const hamburger = document.getElementById("hamburger");
+const profileImage = document.getElementById("profileImage");
+
+hamburger.addEventListener("click", () => {
+  dropdown.classList.toggle("show");
+});
+
+window.addEventListener("click", function (e) {
+  if (!dropdown.contains(e.target) && !hamburger.contains(e.target)) {
+    dropdown.classList.remove("show");
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("managerEmail");
+  window.location.href = "index.html";
+});
+
+document.getElementById("helpBtn").addEventListener("click", () => {
+  alert("Admin Name: Admin\nEmail: admin@example.com\nPhone: +91-9876543210");
+});
+
+document.getElementById("viewWorkersBtn").addEventListener("click", () => {
+  window.location.href = "all-workers.html";
+});
+
+document.getElementById("profileBtn").addEventListener("click", () => {
+  alert("Manager: manager1@example.com\nShift: Morning");
+});
+
+window.addEventListener("load", () => {
+  const img = localStorage.getItem("managerProfileImage");
+  profileImage.src = img || "images/default-avatar.png";
+
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("filterDate").value = today;
+  loadFilteredWorkers(new Date(today));
+});
+
+document.getElementById("filterDate").addEventListener("change", () => {
+  const selectedDate = new Date(document.getElementById("filterDate").value);
+  loadFilteredWorkers(selectedDate);
+});
+
+document.getElementById("filterShift").addEventListener("change", () => {
+  const selectedDate = new Date(document.getElementById("filterDate").value);
+  loadFilteredWorkers(selectedDate);
+});
+
+document.getElementById("filterType").addEventListener("change", () => {
+  const selectedDate = new Date(document.getElementById("filterDate").value);
+  loadFilteredWorkers(selectedDate);
+});
+
+function loadFilteredWorkers(date) {
+  fetch("http://localhost:8080/api/workers")
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById("attendanceBody");
+      tbody.innerHTML = "";
+
+      const shift = document.getElementById("filterShift").value;
+      const type = document.getElementById("filterType").value;
+
+      const filtered = data.filter(worker => {
+        const joiningDate = new Date(worker.joiningDate);
+        const contractEndDate = new Date(joiningDate);
+        contractEndDate.setDate(contractEndDate.getDate() + worker.contractDays);
+
+        const isDateValid = joiningDate <= date && date <= contractEndDate;
+        const isShiftMatch = !shift || (worker.shift && worker.shift.toLowerCase() === shift.toLowerCase());
+        const isTypeMatch = !type || (worker.workerType && worker.workerType.toLowerCase() === type.toLowerCase());
+
+        return isDateValid && isShiftMatch && isTypeMatch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4">No workers available for selected date.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach((worker, i) => {
+        const row = document.createElement("tr");
+       row.innerHTML = `
+  <td>${i + 1}</td>
+  <td><a href="worker-details.html?email=${encodeURIComponent(worker.email)}&from=mark-attendance" target="_blank">${worker.name}</a></td>
+  <td>${worker.email}</td>
+  <td>
+    <button class="btn btn-red" data-email="${worker.email}" data-action="IN" onclick="markAttendance('${worker.email}', 'IN', this)">IN</button>
+    <button class="btn btn-red" data-email="${worker.email}" data-action="OUT" onclick="markAttendance('${worker.email}', 'OUT', this)">OUT</button>
+  </td>
+`;
+
+        tbody.appendChild(row);
+      });
+
+      loadExistingAttendance(date);
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById("attendanceBody").innerHTML = `<tr><td colspan="4">Failed to load workers</td></tr>`;
+    });
+}
+
+function markAttendance(email, action, btn) {
+  const isGreen = btn.classList.contains("btn-green");
+  const endpoint = isGreen ? "/api/attendance/unmark-entry" : "/api/attendance/mark-entry";
+
+  const selectedDate = document.getElementById("filterDate").value;
+
+  fetch("http://localhost:8080" + endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ email, action, date: selectedDate })
+  })
+    .then(res => res.text())
+    .then(msg => {
+      alert(msg);
+      if (isGreen) {
+        btn.classList.remove("btn-green");
+        btn.classList.add("btn-red");
+        btn.textContent = action;
+      } else {
+        const now = new Date();
+        const hh = now.getHours().toString().padStart(2, '0');
+        const mm = now.getMinutes().toString().padStart(2, '0');
+        btn.classList.remove("btn-red");
+        btn.classList.add("btn-green");
+        btn.textContent = `${action}: ${hh}:${mm}`;
+      }
+    })
+    .catch(err => {
+      console.error("Error marking/unmarking attendance", err);
+      alert("Something went wrong");
+    });
+}
+
+function loadExistingAttendance(date) {
+  const dateStr = date.toISOString().split("T")[0];
+
+  fetch(`http://localhost:8080/api/attendance/entries?date=${dateStr}`)
+    .then(res => res.json())
+    .then(entries => {
+      entries.forEach(entry => {
+        const email = entry.workerEmail;
+
+        if (entry.inTime) {
+          const inBtn = document.querySelector(`button[data-email="${email}"][data-action="IN"]`);
+          if (inBtn) {
+            inBtn.classList.remove("btn-red");
+            inBtn.classList.add("btn-green");
+            inBtn.textContent = "IN: " + entry.inTime.slice(0, 5);
+          }
+        }
+
+        if (entry.outTime) {
+          const outBtn = document.querySelector(`button[data-email="${email}"][data-action="OUT"]`);
+          if (outBtn) {
+            outBtn.classList.remove("btn-red");
+            outBtn.classList.add("btn-green");
+            outBtn.textContent = "OUT: " + entry.outTime.slice(0, 5);
+          }
+        }
+      });
+    })
+    .catch(err => console.error("Failed to load existing attendance", err));
+}
+</script>
+
+</body>
+</html>

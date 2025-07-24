@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Worker Details</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .info-row {
+      margin-bottom: 18px;
+    }
+
+    .info-row label {
+      display: block;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .info-row span {
+      display: block;
+      font-size: 16px;
+      color: #555;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+    }
+
+    .back-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    select, button, input[type="number"] {
+      margin-top: 10px;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+
+    button {
+      background-color: #2ecc71;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+
+    .attendance-summary {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .summary-box {
+      padding: 15px 30px;
+      background-color: #ffc107;
+      color: black;
+      font-weight: bold;
+      font-size: 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+
+    .summary-box:hover {
+      background-color: #e0a800;
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 15px;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>Worker Details</header>
+
+<div class="container" id="workerDetails">
+  <!-- Filled dynamically -->
+</div>
+
+<script>
+const container = document.getElementById("workerDetails");
+
+const urlParams = new URLSearchParams(window.location.search);
+const rawEmail = urlParams.get("email");
+const from = urlParams.get("from");
+const email = rawEmail ? rawEmail.trim().toLowerCase() : null;
+
+if (!email) {
+  container.innerHTML = "<div class='error'>No email provided in URL.</div>";
+} else {
+  Promise.all([
+    fetch(`http://localhost:8080/api/workers/${encodeURIComponent(email)}`).then(res => res.json()),
+    fetch(`http://localhost:8080/api/attendance/summary/${encodeURIComponent(email)}`).then(res => res.json())
+  ])
+  .then(([worker, summary]) => {
+    const present = summary.presentDays || 0;
+
+    // Calculate days since joining
+    const joinDate = new Date(worker.joiningDate);
+    const today = new Date();
+    const diffTime = today - joinDate;
+    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const totalWorkingDays = totalDays > 0 ? totalDays : 0;
+    const absent = Math.max(0, totalWorkingDays - present);
+
+    container.innerHTML = `
+      <div class="info-row"><span><strong>Name - </strong>${worker.name}</span></div>
+      <div class="info-row"><span><strong>Email - </strong>${worker.email}</span></div>
+      <div class="info-row"><span><strong>Mobile - </strong>${worker.mobileNumber}</span></div>
+      <div class="info-row"><span><strong>Role - </strong>${worker.role}</span></div>
+      <div class="info-row"><span><strong>Shift - </strong>${worker.shift}</span></div>
+      <div class="info-row"><span><strong>Joining Date - </strong>${worker.joiningDate}</span></div>
+      <div class="info-row"><span><strong>Address - </strong>${worker.address || "-"}</span></div>
+      <div class="info-row"><span><strong>ID Number - </strong>${worker.idNumber}</span></div>
+
+      <div class="info-row">
+        <label for="typeSelect">Worker Type:</label>
+        <select id="typeSelect">
+          <option value="">-- Select Type --</option>
+          <option value="Plumber">Plumber</option>
+          <option value="Carpenter">Carpenter</option>
+          <option value="Labour">Labour</option>
+          <option value="Electrician">Electrician</option>
+          <option value="Painter">Painter</option>
+        </select>
+        <button onclick="saveType('${worker.id}')">Save Type</button>
+      </div>
+
+      <div class="info-row">
+        <label for="contractDays">Contract Days:</label>
+        <input type="number" id="contractDays" min="1" value="${worker.contractDays || ''}" />
+        <button onclick="saveContractDays('${worker.email}')">Save Contract Days</button>
+      </div>
+
+      <div class="attendance-summary" id="attendanceSummaryContainer">
+        <div class="summary-box">Attendance Summary</div>
+        <div class="chart-container">
+          <canvas id="attendanceChart" width="280" height="280"></canvas>
+        </div>
+      </div>
+
+      <a href="${from === 'mark-attendance' ? 'mark-attendance.html' : 'all-workers.html'}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> ${from === 'mark-attendance' ? 'Back to Mark Attendance' : 'Back to Workers'}
+      </a>
+    `;
+
+    // Set type dropdown value if available
+    const typeSelect = document.getElementById("typeSelect");
+    if (worker.workerType) {
+      typeSelect.value = worker.workerType;
+    }
+
+    // Render Pie Chart
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: [present, absent],
+          backgroundColor: ['#2ecc71', '#e74c3c']
+        }]
+      },
+      options: {
+        responsive: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    // Make entire summary section clickable
+    const summaryContainer = document.getElementById("attendanceSummaryContainer");
+    if (summaryContainer) {
+      summaryContainer.addEventListener("click", () => {
+        window.location.href = `attendance-details.html?email=${encodeURIComponent(worker.email)}&from=${encodeURIComponent(from || 'all-workers')}`;
+      });
+    }
+  })
+  .catch(error => {
+    console.error(error);
+    container.innerHTML = "<div class='error'>Error fetching worker details.</div>";
+  });
+}
+
+// Save Worker Type
+function saveType(workerId) {
+  const selectedType = document.getElementById("typeSelect").value;
+  if (!selectedType) {
+    alert("Please select a type");
+    return;
+  }
+
+  fetch(`http://localhost:8080/api/workers/${workerId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ workerType: selectedType })
+  })
+    .then(res => res.ok ? location.reload() : alert("Failed to update worker type"))
+    .catch(err => {
+      console.error(err);
+      alert("Error updating worker type");
+    });
+}
+
+// Save Contract Days
+function saveContractDays(email) {
+  const days = document.getElementById("contractDays").value;
+  if (!days || isNaN(days) || days <= 0) {
+    alert("Please enter a valid number of days");
+    return;
+  }
+
+  fetch(`http://localhost:8080/api/workers/update-contract-days/${encodeURIComponent(email)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contractDays: parseInt(days) })
+  })
+    .then(res => res.ok ? location.reload() : alert("Failed to update contract days"))
+    .catch(err => {
+      console.error(err);
+      alert("Error updating contract days");
+    });
+}
+</script>
+
+</body>
+</html>

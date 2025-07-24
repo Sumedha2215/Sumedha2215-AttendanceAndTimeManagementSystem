@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance Details</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    .stat {
+      font-size: 20px;
+      margin: 15px 0;
+      color: #333;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 25px;
+      text-decoration: none;
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+    }
+
+    .back-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>Attendance Summary</header>
+
+<div class="container" id="summaryContainer">
+  <!-- Summary will be loaded here -->
+</div>
+
+<script>
+const container = document.getElementById("summaryContainer");
+const params = new URLSearchParams(window.location.search);
+const email = params.get("email")?.trim().toLowerCase();
+const from = params.get("from") || "all-workers"; // fallback
+
+if (!email) {
+  container.innerHTML = "<div class='error'>Email is missing in the URL.</div>";
+} else {
+  Promise.all([
+    fetch(`http://localhost:8080/api/workers/${encodeURIComponent(email)}`).then(res => {
+      if (!res.ok) throw new Error("Worker not found");
+      return res.json();
+    }),
+    fetch(`http://localhost:8080/api/attendance/summary/${encodeURIComponent(email)}`).then(res => {
+      if (!res.ok) throw new Error("Attendance summary not found");
+      return res.json();
+    })
+  ])
+  .then(([worker, summary]) => {
+    const name = worker.name || "N/A";
+    const contract = worker.contractDays || 0;
+    const present = summary.presentDays || 0;
+
+    // Calculate days since joining
+    const joinDate = new Date(worker.joiningDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    joinDate.setHours(0, 0, 0, 0);
+
+    const daysPassed = Math.floor((today - joinDate) / (1000 * 60 * 60 * 24)) + 1;
+    const effectiveTotal = Math.min(daysPassed, contract);
+    const absent = Math.max(0, effectiveTotal - present);
+
+    const backURL = `worker-details.html?email=${encodeURIComponent(email)}&from=${encodeURIComponent(from)}`;
+
+    container.innerHTML = `
+      <div class="stat"><strong>Worker Name:</strong> ${name}</div>
+      <div class="stat"><strong>Present Days:</strong> ${present}</div>
+      <div class="stat"><strong>Contract Days:</strong> ${contract}</div>
+      <div class="stat"><strong>Till Today:</strong> ${daysPassed} days since joining</div>
+      <div class="stat"><strong>Absent Days:</strong> ${absent}</div>
+      <a class="back-btn" href="${backURL}">← Back to Profile</a>
+    `;
+  })
+  .catch(err => {
+    console.error(err);
+    container.innerHTML = "<div class='error'>Failed to load attendance data. Please try again later.</div>";
+  });
+}
+</script>
+
+</body>
+</html>
